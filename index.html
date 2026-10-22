@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kisállat-biztosítás kalkulátor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: Alfa DS — purple shell, square-cornered white cards on a light neutral canvas, form column + 270px detail rail. Single light theme (the DS defines no dark mode). */
+:root{
+  color-scheme: light;
+  /* Brand — teal (actions) */
+  --teal-500:#00a6b6; --teal-600:#008d9b; --teal-700:#00747f; --teal-800:#005b64; --teal-900:#004249;
+  --teal-200:#a6e0e5; --teal-100:#ccedf0; --teal-50:#e5f6f8;
+  /* Brand — purple (identity, focus) */
+  --purple-500:#6a488e; --purple-600:#5a3d79; --purple-700:#4a3263;
+  --purple-300:#b4a3c7; --purple-200:#cbbfd7; --purple-100:#e1dae8; --purple-50:#f0edf4;
+  --logo-red:#e2000f;
+  /* Neutrals */
+  --n-950:#20262e; --n-900:#333c49; --n-800:#465364; --n-700:#5a6a7f; --n-600:#6d809b;
+  --n-500:#8097b6; --n-400:#a6b6cc; --n-300:#bfcbdb; --n-200:#d3dbe5; --n-100:#e6eaf0; --n-50:#f2f5f8; --white:#ffffff;
+  /* Semantic */
+  --err-500:#ca4642; --err-600:#ac3c38; --err-text:#8d312e; --err-bg:#faecec; --err-bg2:#f4dad9; --err-bg3:#ecbebd;
+  --ok-600:#147144; --ok-bg2:#d3f5e5;
+  --info-700:#0369a1; --info-bg:#e0f2fe;
+  /* Type */
+  --font:"Source Sans 3","Source Sans Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --shadow-soft:0 2px 15px rgba(0,0,0,.10);
+}
+*{box-sizing:border-box}
+html{background:var(--n-50)}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;font-family:var(--font);font-size:16px;line-height:1.5;color:var(--n-800);background:var(--n-50);-webkit-font-smoothing:antialiased}
+h1,h2,h3{text-wrap:balance}
+button{font:inherit}
+.wrap{width:100%;max-width:1168px;margin:0 auto;padding-inline:24px}
+@media (max-width:600px){.wrap{padding-inline:16px}}
+
+/* Prototype bar */
+.protobar{background:var(--n-950);color:var(--n-100);font-size:13px}
+.protobar .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding-block:6px}
+.protobar .tag{background:var(--purple-500);color:var(--white);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.protobar label{display:flex;align-items:center;gap:6px}
+.protobar select,.protobar .pbtn{font:inherit;font-size:13px;background:var(--n-900);color:var(--white);border:1px solid var(--n-700);padding:3px 8px;cursor:pointer}
+.protobar .pbtn:hover{background:var(--n-800)}
+.protobar .spacer{flex:1}
+
+/* Header & footer (DS: Header WEB / Footer) */
+.site-header{background:var(--purple-500);border-bottom:1px solid var(--purple-600)}
+.site-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:80px}
+.logo{display:inline-flex;flex-direction:column;align-items:flex-start;color:var(--white);text-decoration:none;line-height:1}
+.logo b{font-size:30px;font-weight:700;letter-spacing:.34em;margin-right:-.34em}
+.logo small{margin-top:4px;padding-top:3px;border-top:2px solid var(--logo-red);font-size:9.5px;font-weight:700;letter-spacing:.03em}
+.header-title{color:var(--white);font-size:20px;line-height:1.4;font-weight:600}
+@media (max-width:600px){.header-title{display:none}}
+.site-footer{background:var(--purple-500);color:var(--white);font-size:12px;line-height:1.5}
+.site-footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 32px;padding-block:20px}
+.site-footer .co{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-weight:600}
+.site-footer .co i{width:1px;height:14px;background:var(--purple-300)}
+.site-footer nav{display:flex;flex-wrap:wrap;gap:8px 16px}
+.site-footer a{color:var(--white);font-weight:600;text-decoration:underline}
+.site-footer a:hover{color:var(--n-100)}
+main{flex:1;padding-block:28px 56px}
+
+/* Stepper (DS: Progress bars) */
+.stepper{list-style:none;margin:0 0 32px;padding:0;display:flex}
+.step{flex:1 1 0;min-width:0;position:relative;display:flex;justify-content:center}
+.step::before{content:"";position:absolute;top:11px;height:2px;left:calc(-50% + 18px);right:calc(50% + 18px);background:var(--n-300)}
+.step:first-child::before{display:none}
+.step-inner{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:0 4px;background:none;border:0;color:inherit}
+button.step-inner{cursor:pointer}
+button.step-inner:hover .dot{background:var(--teal-100)}
+button.step-inner:focus-visible{outline:4px solid var(--purple-500);outline-offset:2px}
+.dot{width:24px;height:24px;border-radius:999px;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--purple-100);color:var(--n-800);position:relative;z-index:1}
+.step-title{font-size:14px;line-height:1.46;font-weight:600;color:var(--n-800)}
+.step-desc{font-size:12px;line-height:1.5;color:var(--n-700);margin-top:-6px}
+.is-active .dot{background:var(--teal-500);color:var(--white)}
+.is-active .step-title{font-weight:700;color:var(--n-900)}
+.is-done .dot{background:var(--teal-200);color:var(--teal-600)}
+.is-skipped .dot{background:var(--n-300);color:var(--white)}
+.is-skipped .step-title{color:var(--n-500)}
+.is-skipped .step-desc{color:var(--n-400)}
+.stepper-compact{display:none;margin-bottom:24px}
+.stepper-compact .top{display:flex;justify-content:space-between;gap:12px;font-size:14px}
+.stepper-compact strong{color:var(--n-900)}
+.stepper-compact .bar{height:4px;background:var(--n-200);margin-top:8px}
+.stepper-compact .bar span{display:block;height:100%;background:var(--teal-500)}
+@media (max-width:820px){.stepper{display:none}.stepper-compact{display:block}}
+
+/* Page layout */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:24px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.layout .art{display:none}.layout .summary{order:-1}}
+.card{background:var(--white);border:1px solid var(--n-100);padding:24px}
+@media (max-width:600px){.card{padding:16px}}
+.form{display:flex;flex-direction:column;gap:24px}
+.card-title{margin:0;font-size:24px;line-height:1.4;font-weight:700;color:var(--n-950)}
+.lead{margin:0;font-size:18px;line-height:1.46;color:var(--n-900)}
+.actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+.toprow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+
+/* Buttons (DS: Button / Link button) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:44px;padding:12px 24px;border:1px solid transparent;border-radius:0;font-size:14px;line-height:18px;font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn-lg{height:56px;padding:16px 28px;font-size:18px;line-height:24px}
+.btn-sm{height:32px;padding:8px 10px;font-size:12px;line-height:16px}
+.btn-primary{background:var(--teal-700);color:var(--white)}
+.btn-primary:hover{background:var(--teal-900)}
+.btn-secondary{background:var(--white);border-color:var(--teal-700);color:var(--teal-700)}
+.btn-secondary:hover{background:var(--teal-100);border-color:var(--teal-900);color:var(--teal-900)}
+.btn-tertiary{background:transparent;color:var(--teal-700);padding-inline:0}
+.btn-tertiary:hover{color:var(--teal-900)}
+.btn:focus-visible,.link:focus-visible{outline:4px solid var(--purple-500);outline-offset:3px}
+.btn:disabled{background:var(--teal-200);color:var(--white);cursor:not-allowed}
+.link{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:0;font-weight:600;color:var(--teal-700);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.link:hover{color:var(--teal-900)}
+@media (max-width:600px){.actions .btn{flex:1}}
+
+/* Form fields (DS: Form elements) */
+.field{display:flex;flex-direction:column;gap:8px;min-width:0;margin:0;padding:0;border:0}
+.label{padding:0;font-size:16px;line-height:1.5;font-weight:600;color:var(--n-700)}
+.label .opt{font-weight:400}
+.label .req{color:var(--purple-500);font-weight:700}
+.control{position:relative;display:flex;align-items:stretch;height:44px;min-width:0;background:var(--white);border:1px solid var(--n-300);border-left-width:2px}
+.control:hover{background:var(--n-50);border-color:var(--n-400)}
+.control:focus-within{outline:4px solid var(--purple-500);outline-offset:2px}
+.control.is-error{background:var(--err-bg);border-color:var(--err-500)}
+.control input,.control select{flex:1;min-width:0;width:100%;height:100%;border:0;background:transparent;font:inherit;font-weight:600;color:var(--n-800);padding:0 16px;outline:none;-webkit-appearance:none;appearance:none;border-radius:0}
+.control:hover input,.control:hover select{color:var(--n-900)}
+.control input::placeholder{color:var(--n-600);font-weight:400;opacity:1}
+.control select{padding-right:48px;cursor:pointer;text-overflow:ellipsis}
+.control select.is-empty{color:var(--n-600);font-weight:400}
+.control select option{color:var(--n-800);font-weight:400}
+.control input[type=date]::-webkit-calendar-picker-indicator{display:none}
+.control input[type=date]::-webkit-date-and-time-value{text-align:left}
+.control .chev{position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--teal-700)}
+.affix{display:flex;align-items:center;padding:0 16px;background:var(--n-100);border-right:1px solid var(--n-300);color:var(--n-800);font-weight:400;flex:none}
+.control:hover .affix{background:var(--n-200)}
+.control.is-error .affix{background:var(--err-bg3)}
+.cal-btn{flex:none;width:64px;display:grid;place-items:center;background:transparent;border:0;border-left:1px solid var(--n-300);color:var(--teal-700);cursor:pointer}
+.cal-btn:hover{color:var(--teal-900)}
+.control.is-error .cal-btn{border-left-color:var(--err-500)}
+.msg{display:flex;align-items:flex-start;gap:4px;font-size:14px;line-height:1.46;color:var(--err-text)}
+.msg svg{flex:none;margin-top:0}
+.hint{font-size:14px;line-height:1.46;color:var(--n-700)}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.row-zip{grid-template-columns:minmax(0,1fr) minmax(0,3fr)}
+@media (max-width:520px){.row2{grid-template-columns:minmax(0,1fr)}.row-zip{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+
+/* Radio — button type (DS) */
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.opts.stack{grid-template-columns:minmax(0,1fr)}
+.opt-box{position:relative;display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 20px;background:var(--white);border:1px solid var(--teal-700);color:var(--n-800);cursor:pointer;user-select:none}
+.opt-box:hover{background:var(--teal-100);border-color:var(--teal-900)}
+.opt-box input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.opt-box.is-on{background:var(--teal-50)}
+.opt-box:has(input:focus-visible){outline:4px solid var(--purple-500);outline-offset:2px}
+.radio{flex:none;width:24px;height:24px;border-radius:999px;border:1px solid var(--teal-700);background:var(--white);display:grid;place-items:center}
+.is-on .radio{border-width:2px}
+.is-on .radio::after{content:"";width:12px;height:12px;border-radius:999px;background:var(--teal-700)}
+.opt-ico{flex:none;color:var(--purple-500);margin-left:4px}
+.opt-box .t{font-size:16px}
+.opt-box.big{min-height:64px}
+.opts.is-error .opt-box{background:var(--err-bg);border-color:var(--err-600)}
+.opts.is-error .radio{border-color:var(--err-600)}
+
+/* Checkbox (DS) */
+.checks{display:flex;flex-direction:column;gap:12px}
+.check{position:relative;display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--white);border:1px solid var(--n-300);cursor:pointer;color:var(--n-800)}
+.check.plain{border-color:transparent;padding:4px;align-self:flex-start}
+.check:hover{background:var(--teal-100)}
+.check.is-on{background:var(--teal-50)}
+.check input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.check:has(input:focus-visible){outline:4px solid var(--purple-500);outline-offset:2px}
+.box{flex:none;width:24px;height:24px;border:1px solid var(--teal-700);background:var(--white);display:grid;place-items:center;color:var(--white)}
+.check:hover .box{border-color:var(--teal-900)}
+.is-on .box,.is-mixed .box{background:var(--teal-700)}
+.check:hover.is-on .box{background:var(--teal-900)}
+.check .t{padding-top:1px}
+.check.is-error{background:var(--err-bg);border-color:var(--err-600)}
+.check.is-error .box{border-color:var(--err-600)}
+
+/* Alerts (DS: inverse variant) */
+.alert{display:flex;gap:12px;padding:12px;align-items:flex-start}
+.alert .a-title{font-size:18px;line-height:1.46;font-weight:600;color:var(--n-950)}
+.alert .a-text{color:var(--n-800)}
+.alert-error{background:var(--err-bg2)}
+.alert-error>svg{color:var(--err-600)}
+.alert-info{background:var(--info-bg)}
+.alert-info>svg{color:var(--info-700)}
+
+/* Summary rail */
+.summary{display:flex;flex-direction:column;gap:12px;padding:20px;font-size:14px;line-height:1.46}
+.summary h3{margin:0;font-size:18px;line-height:1.46;font-weight:600;color:var(--n-950)}
+.summary p{margin:0}
+.summary hr{border:0;border-top:1px solid var(--n-100);margin:0;width:100%}
+.meta{display:flex;align-items:center;gap:6px;color:var(--n-800)}
+.meta svg{color:var(--purple-500)}
+.summary dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.summary dt{color:var(--n-700)}
+.summary dd{margin:0;font-weight:600;color:var(--n-900);overflow-wrap:anywhere}
+.art{display:flex;justify-content:center;padding-top:8px}
+.art svg{width:100%;max-width:240px;height:auto}
+
+/* Plans */
+.page-title{background:var(--white);border:1px solid var(--n-100);padding:24px;margin-bottom:20px;display:flex;flex-direction:column;gap:10px}
+.page-title h1{margin:0;font-size:32px;line-height:1.4;font-weight:700;color:var(--n-950)}
+@media (max-width:600px){.page-title h1{font-size:24px}.page-title{padding:16px}}
+.meta-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;font-size:14px;line-height:1.46}
+.plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:start}
+@media (max-width:900px){.plans{grid-template-columns:minmax(0,1fr)}}
+.plan{background:var(--white);border:1px solid var(--n-100);display:flex;flex-direction:column}
+.plan.is-chosen{outline:2px solid var(--teal-700);outline-offset:-1px}
+.plan-head{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;font-size:24px;line-height:1.4;font-weight:700;color:var(--n-950)}
+.plan[data-tier=mini] .plan-head{background:var(--purple-50)}
+.plan[data-tier=opti] .plan-head{background:var(--purple-100)}
+.plan[data-tier=platina] .plan-head{background:var(--purple-200)}
+.badge{display:inline-block;background:var(--purple-500);color:var(--white);font-size:12px;line-height:16px;font-weight:600;padding:4px 8px;border-radius:999px}
+.badge.teal{background:var(--teal-700)}
+.plan-body{display:flex;flex-direction:column;gap:20px;padding:16px 24px 24px}
+.price{text-align:center;margin:0;color:var(--purple-500);font-size:32px;line-height:1.4;font-weight:600;font-variant-numeric:tabular-nums}
+.price small{display:block;font-size:14px;line-height:1.46;font-weight:400;color:var(--n-700)}
+.plan-body .btn{align-self:center;min-width:140px}
+.cov{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
+.cov li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:12px;align-items:start}
+.cov li svg{color:var(--purple-500)}
+.cov strong{display:block;font-weight:600;color:var(--n-950)}
+.cov span{font-variant-numeric:tabular-nums}
+.cov li.no,.cov li.no strong{color:var(--n-500)}
+.cov li.no svg{color:var(--n-400)}
+.fineprint{font-size:14px;color:var(--n-700);margin:20px 0 0}
+.docs-card{margin-top:24px}
+
+/* Success */
+.success{display:flex;flex-direction:column;gap:24px}
+.hero{display:flex;align-items:center;gap:32px;background:var(--white);border:1px solid var(--n-100);padding:32px}
+.tick{flex:none;width:104px;height:104px;border-radius:999px;background:var(--purple-500);color:var(--white);display:grid;place-items:center}
+.hero h1{margin:0;font-size:48px;line-height:1.2;font-weight:700;color:var(--purple-500)}
+.hero p{margin:4px 0 0;font-size:32px;line-height:1.4;color:var(--n-950)}
+@media (max-width:700px){.hero{flex-direction:column;align-items:flex-start;gap:16px;padding:20px}.tick{width:64px;height:64px}.tick svg{width:36px;height:36px}.hero h1{font-size:32px}.hero p{font-size:22px}}
+.receipt{display:flex;flex-direction:column;gap:12px;padding-inline:4px}
+.receipt h2{margin:0;font-size:20px;line-height:1.4;font-weight:600;color:var(--n-950)}
+.receipt p{margin:0}
+.mono{font-variant-numeric:tabular-nums;font-weight:600;color:var(--n-900)}
+.docs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.doc{display:flex;align-items:center;gap:16px;padding:14px 20px;background:var(--white);border:1px solid var(--n-300);cursor:pointer;width:100%;text-align:left;color:var(--teal-700)}
+.doc:hover{background:var(--teal-50)}
+.doc:focus-visible{outline:4px solid var(--purple-500);outline-offset:2px}
+.doc .name{flex:1;min-width:0;font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.doc .pdf{flex:none}
+.survey{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;background:var(--white);border:1px solid var(--n-100);padding:32px}
+.survey h2{margin:0;display:flex;align-items:center;gap:12px;font-size:32px;line-height:1.4;font-weight:700;color:var(--purple-500)}
+.survey p{margin:4px 0 0;font-size:24px;line-height:1.4;color:var(--n-950)}
+@media (max-width:700px){.survey{padding:20px}.survey h2{font-size:24px}.survey p{font-size:18px}}
+.rating{display:flex;gap:8px;flex-wrap:wrap}
+.rating button{width:44px;height:44px;border:1px solid var(--teal-700);background:var(--white);color:var(--teal-700);font-weight:600;cursor:pointer}
+.rating button:hover{background:var(--teal-100)}
+.rating button[aria-pressed=true]{background:var(--teal-700);color:var(--white)}
+.rating button:focus-visible{outline:4px solid var(--purple-500);outline-offset:2px}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--n-950);color:var(--white);padding:12px 16px;font-size:14px;max-width:calc(100% - 32px);box-shadow:var(--shadow-soft);transition:opacity .2s,transform .2s;z-index:10}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+[tabindex="-1"]:focus{outline:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="protobar" role="region" aria-label="Prototípus vezérlők">
+  <div class="wrap">
+    <span class="tag">Prototípus</span>
+    <label>Képernyő
+      <select id="proto-jump"></select>
+    </label>
+    <button type="button" class="pbtn" data-act="sample">Mintaadatok kitöltése</button>
+    <span class="spacer"></span>
+    <button type="button" class="pbtn" data-act="restart">Újrakezdés</button>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="#" data-act="home" aria-label="Alfa Vienna Insurance Group – kezdőlap">
+      <b>ALFA</b><small>VIENNA INSURANCE GROUP</small>
+    </a>
+    <span class="header-title">Kisállat-biztosítás</span>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <div class="wrap" id="view"></div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="co"><span>Alfa Vienna Insurance Group Biztosító Zrt.</span><i aria-hidden="true"></i><a href="https://www.alfa.hu" target="_blank" rel="noopener">alfa.hu</a></div>
+    <nav aria-label="Lábléc">
+      <a href="#" data-act="stub">Adatvédelem</a>
+      <a href="#" data-act="stub">Jogi közlemény</a>
+      <a href="#" data-act="stub">Dokumentumok</a>
+      <a href="#" data-act="stub">Kapcsolat</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Data ---------- */
+const STEPS = ["Biztosítás adatai","Díjszámítás","Kisállat adatai","Szerződő adatai","Gazdi adatai","Nyilatkozatok","Szerződés megkötése"];
+const BREEDS = {
+  kutya:["Keverék jellegű","Labrador retriever","Golden retriever","Német juhász","Magyar vizsla","Francia bulldog","Puli","Tacskó","Yorkshire terrier","Border collie"],
+  macska:["Európai rövidszőrű","Brit rövidszőrű","Maine coon","Perzsa","Sziámi","Ragdoll","Szfinx"]
+};
+const ZIPS = {"1011":"Budapest","1051":"Budapest","1136":"Budapest","1139":"Budapest","2800":"Tatabánya","4024":"Debrecen","6720":"Szeged","7621":"Pécs","9021":"Győr"};
+const STREETS = {
+  "Budapest":["Andrássy út","Pozsonyi út","Szent István körút","Váci út","Visegrádi utca"],
+  "Debrecen":["Hatvan utca","Kossuth utca","Piac utca"],
+  "Győr":["Baross Gábor út","Szent István út"],
+  "Pécs":["Király utca","Rákóczi út"],
+  "Szeged":["Dugonics tér","Kárász utca","Tisza Lajos körút"],
+  "Tatabánya":["Fő tér","Győri út","Szent Borbála út"]
+};
+const CITIES = Object.keys(STREETS);
+const BUILDINGS = ["Családi ház, ikerház","Társasház, lakás","Sorház","Tanya, nyaraló"];
+const PLANS = [
+  {id:"mini",name:"Mini",base:4990,cov:[["Baleseti szolgáltatás","20 000 Ft"],["Betegség szolgáltatás","20 000 Ft"],["Felelősség-biztosítás",null],["Levonásos önrész","10 000 Ft"]]},
+  {id:"opti",name:"Opti",base:7490,badge:"Népszerű",cov:[["Baleseti szolgáltatás","35 000 Ft"],["Betegség szolgáltatás","35 000 Ft"],["Felelősség-biztosítás",null],["Levonásos önrész","10 000 Ft"]]},
+  {id:"platina",name:"Platina",base:10990,cov:[["Baleseti szolgáltatás","35 000 Ft"],["Betegség szolgáltatás","35 000 Ft"],["Felelősség-biztosítás","500 000 Ft"],["Levonásos önrész","10 000 Ft"]]}
+];
+const DECLS = [
+  "Kijelentem, hogy a kisállat-biztosítás termékismertetőjét és szabályzatát megismertem, és elfogadom.",
+  "Kijelentem, hogy a kisállat a szerződéskötés napján egészséges, és nem áll állatorvosi kezelés alatt.",
+  "Hozzájárulok, hogy a szerződéssel kapcsolatos dokumentumokat elektronikus úton, e-mailben kapjam meg.",
+  "Tudomásul veszem az adatkezelési tájékoztatóban foglaltakat."
+];
+const DOCS = ["Kisállat-biztosítás kötvény","Kisállat-biztosítás termékismertető","Kisállat-biztosítás szabályzat","Távértékesítési tájékoztató"];
+
+/* ---------- Icons ---------- */
+const P = {
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  chevL:'<path d="M14.5 5.5L8 12l6.5 6.5"/>',
+  chevD:'<path d="M6 9.5l6 6 6-6"/>',
+  cal:'<path d="M4 6h16v14H4zM4 10.5h16M8.5 3.5v4M15.5 3.5v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01" stroke-width="2.6"/>',
+  alert:'<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.5h.01"/>',
+  download:'<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  swap:'<path d="M4 8.5h15l-3.5-3.5M20 15.5H5l3.5 3.5"/>',
+  clip:'<path d="M5.5 4.5h13v16h-13zM9 4.5V3h6v1.5M9 10h6M9 13.5h6M9 17h3.5"/>',
+  minus:'<path d="M6 12h12"/>'
+};
+const ic = (n,s=24,sw=2) => `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const DOG = '<svg class="opt-ico" viewBox="0 0 40 40" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 15c0-4.4 3.1-8 7-8s7 3.6 7 8v6c0 5.2-3.1 9-7 9s-7-3.8-7-9z"/><path d="M13 13.5c-3.4-.6-6 1.8-6 6 0 3 1.4 5 3.6 5.2M27 13.5c3.4-.6 6 1.8 6 6 0 3-1.4 5-3.6 5.2"/><circle cx="17" cy="18" r=".9" fill="currentColor"/><circle cx="23" cy="18" r=".9" fill="currentColor"/><path d="M18.2 23h3.6L20 25z" fill="currentColor"/></svg>';
+const CAT = '<svg class="opt-ico" viewBox="0 0 40 40" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8l5 6.5h10L30 8v14c0 5.8-4.5 9.5-10 9.5S10 27.8 10 22z"/><circle cx="16" cy="20" r=".9" fill="currentColor"/><circle cx="24" cy="20" r=".9" fill="currentColor"/><path d="M18.4 24h3.2L20 25.8z" fill="currentColor"/><path d="M4 22.5h7M4.5 26.5l6.5-1.5M36 22.5h-7M35.5 26.5L29 25"/></svg>';
+const PDF = '<svg class="pdf" viewBox="0 0 24 28" width="22" height="26" aria-hidden="true"><path d="M2 1h14l6 6v20H2z" fill="#ca4642"/><path d="M16 1v6h6z" fill="#ecbebd"/><text x="12" y="22" text-anchor="middle" font-size="6" font-weight="700" fill="#fff" font-family="Source Sans 3, sans-serif">PDF</text></svg>';
+const ART = `<svg viewBox="0 0 240 250" role="img" aria-label="Nyakörv mancsos medállal">
+  <path d="M120 10L212 44v78c0 58-40 96-92 118C68 218 28 180 28 122V44z" fill="var(--purple-50)"/>
+  <path d="M120 10L212 44v78c0 58-40 96-92 118" fill="none" stroke="var(--purple-100)" stroke-width="2"/>
+  <ellipse cx="120" cy="96" rx="102" ry="30" fill="none" stroke="var(--teal-800)" stroke-width="16"/>
+  <ellipse cx="120" cy="92" rx="102" ry="30" fill="none" stroke="var(--teal-500)" stroke-width="5" stroke-dasharray="2 0"/>
+  <path d="M110 122h20l-10 16z" fill="var(--purple-300)"/>
+  <path d="M120 206c-32-21-45-40-37-57 8-16 28-14 37 1 9-15 29-17 37-1 8 17-5 36-37 57z" fill="var(--purple-500)"/>
+  <ellipse cx="120" cy="171" rx="11" ry="9" fill="#fff"/>
+  <circle cx="106" cy="157" r="4.5" fill="#fff"/><circle cx="115" cy="150" r="4.5" fill="#fff"/>
+  <circle cx="125" cy="150" r="4.5" fill="#fff"/><circle cx="134" cy="157" r="4.5" fill="#fff"/>
+</svg>`;
+
+/* ---------- State ---------- */
+const KEY = "alfa-kisallat-proto-v1";
+const addr = () => ({zip:"",city:"",street:"",no:"",building:""});
+const person = () => ({last:"",first:"",birthPlace:"",birthDate:"",mother:"",phone:"",email:"",addr:addr(),mailSame:"",mail:addr()});
+const fresh = () => ({
+  step:0, errors:{}, plan:"", done:null, ui:{more:false, rating:0},
+  pet:{type:"",chip:"",birth:"",sex:"",pure:"",breed:"",name:"",mark:"",vaccNo:"",vaccDate:"",chipId:"",chipDate:"",ownerIsContractor:"",sameAddr:"",addr:addr()},
+  contractor:person(), owner:person(), decl:[false,false,false,false]
+});
+let S = fresh();
+try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch(e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+
+const get = p => p.split(".").reduce((o,k)=> o == null ? undefined : o[k], S);
+const set = (p,v) => { const ks=p.split("."); let o=S; ks.slice(0,-1).forEach(k=>{ if(o[k]==null) o[k]={}; o=o[k]; }); o[ks[ks.length-1]]=v; save(); };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const idOf = p => "f-" + p.replace(/\./g,"-");
+const $ = s => document.querySelector(s);
+const view = $("#view");
+
+/* ---------- Helpers ---------- */
+const todayISO = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+function ageYears(iso){
+  const b = new Date(iso); if (isNaN(b)) return 0;
+  const t = new Date(); let a = t.getFullYear()-b.getFullYear();
+  const m = t.getMonth()-b.getMonth(); if (m<0 || (m===0 && t.getDate()<b.getDate())) a--;
+  return Math.max(0,a);
+}
+const ym = iso => iso ? iso.slice(0,4)+"."+iso.slice(5,7)+"." : "–";
+const ft = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g," ") + " Ft";
+function price(plan){
+  const p = PLANS.find(x=>x.id===plan); if(!p) return 0;
+  const a = ageYears(S.pet.birth);
+  let f = S.pet.type==="macska" ? 0.85 : 1;
+  f *= a<2 ? 1 : a<6 ? 1.12 : a<9 ? 1.35 : 1.7;
+  if (S.pet.pure==="Igen") f *= 1.15;
+  return Math.round(p.base*f/10)*10;
+}
+function petSentence(){
+  const p = S.pet;
+  const sex = p.sex==="Hím" ? "hím " : p.sex==="Nőstény" ? "nőstény " : "";
+  const mix = p.pure==="Nem" ? "keverék " : (p.pure==="Igen" && p.breed ? p.breed.toLowerCase()+" " : "");
+  const kind = p.type==="macska" ? "macskámat" : p.type==="kutya" ? "kutyámat" : "kisállatomat";
+  return `Biztosítani szeretném ${p.name ? esc(p.name)+" nevű " : ""}${esc(sex+mix)}${kind}`;
+}
+const ownerSkipped = () => S.pet.ownerIsContractor==="Igen";
+function nextStep(i){ let n=i+1; if(n===4 && ownerSkipped()) n=5; return n; }
+function prevStep(i){ let n=i-1; if(n===4 && ownerSkipped()) n=3; return Math.max(0,n); }
+
+/* ---------- Field builders ---------- */
+const reqMark = '<span class="req" aria-hidden="true"> *</span>';
+const errMsg = p => S.errors[p] ? `<div class="msg" id="${idOf(p)}-err">${ic("alert",20)}<span>${esc(S.errors[p])}</span></div>` : "";
+const errAttrs = p => S.errors[p] ? `aria-invalid="true" aria-describedby="${idOf(p)}-err"` : "";
+const labelEl = (p,label,o={}) => `<label class="label" for="${idOf(p)}">${label}${o.optional ? ' <span class="opt">(opcionális)</span>' : reqMark}</label>`;
+
+function ctrlInput(p,o={}){
+  return `<div class="control${S.errors[p]?" is-error":""}">${o.prefix?`<span class="affix">${o.prefix}</span>`:""}<input id="${idOf(p)}" data-path="${p}" type="${o.type||"text"}" value="${esc(get(p))}" placeholder="${esc(o.ph||"")}" ${o.attrs||""} ${errAttrs(p)}></div>`;
+}
+function ctrlSelect(p,items,o={}){
+  const v = get(p)||"";
+  const opts = items.map(x=>`<option${x===v?" selected":""}>${esc(x)}</option>`).join("");
+  return `<div class="control${S.errors[p]?" is-error":""}"><select id="${idOf(p)}" data-path="${p}" class="${v?"":"is-empty"}" ${o.aria?`aria-label="${o.aria}"`:""} ${errAttrs(p)} ${items.length?"":"disabled"}><option value="">${esc(o.ph||"Kérjük, válasszon!")}</option>${opts}</select><span class="chev">${ic("chevD",24)}</span></div>`;
+}
+function ctrlDate(p,o={}){
+  return `<div class="control${S.errors[p]?" is-error":""}"><input id="${idOf(p)}" data-path="${p}" type="date" value="${esc(get(p))}" ${o.max?`max="${o.max}"`:""} min="${o.min||"1900-01-01"}" ${o.aria?`aria-label="${o.aria}"`:""} ${errAttrs(p)}><button type="button" class="cal-btn" data-act="picker" data-for="${idOf(p)}" aria-label="Naptár megnyitása">${ic("cal",24,1.8)}</button></div>`;
+}
+const textField = (p,label,o={}) => `<div class="field">${labelEl(p,label,o)}${ctrlInput(p,o)}${errMsg(p)}</div>`;
+const selectField = (p,label,items,o={}) => `<div class="field">${labelEl(p,label,o)}${ctrlSelect(p,items,o)}${errMsg(p)}</div>`;
+const dateField = (p,label,o={}) => `<div class="field">${labelEl(p,label,o)}${ctrlDate(p,o)}${errMsg(p)}</div>`;
+
+function radioGroup(p,legend,options,o={}){
+  const v = get(p);
+  const items = options.map(op=>{
+    const [val,text,icon] = Array.isArray(op) ? op : [op,op];
+    const on = v===val;
+    return `<label class="opt-box${on?" is-on":""}${icon?" big":""}">
+      <input type="radio" id="${idOf(p)}-${esc(val)}" name="${p}" data-path="${p}" value="${esc(val)}"${on?" checked":""}>
+      <span class="radio" aria-hidden="true"></span>${icon||""}<span class="t">${esc(text)}</span></label>`;
+  }).join("");
+  return `<fieldset class="field" id="${idOf(p)}" ${errAttrs(p)}><legend class="label">${legend}${reqMark}</legend>
+    <div class="opts${o.stack?" stack":""}${S.errors[p]?" is-error":""}">${items}</div>${errMsg(p)}</fieldset>`;
+}
+
+function addressBlock(p){
+  const a = get(p);
+  return `
+  <fieldset class="field"><legend class="label">Irányítószám / Település${reqMark}</legend>
+    <div class="row2 row-zip">
+      ${ctrlInput(p+".zip",{ph:"Pl. 1136",attrs:'inputmode="numeric" maxlength="4" autocomplete="postal-code" aria-label="Irányítószám"'})}
+      ${ctrlSelect(p+".city",CITIES,{ph:"Település",aria:"Település"})}
+    </div>${errMsg(p+".zip")}${errMsg(p+".city")}
+  </fieldset>
+  <div data-street="${p}">${streetField(p)}</div>
+  ${textField(p+".no","Házszám",{ph:"Pl. 9/B"})}
+  ${selectField(p+".building","Az épület jellege",BUILDINGS)}`;
+}
+const streetField = p => selectField(p+".street","Közterület",STREETS[get(p+".city")]||[],{ph: get(p+".city") ? "Kérjük, válasszon!" : "Előbb adja meg a települést"});
+
+function personBlock(p){
+  return `
+  ${textField(p+".last","Vezetékneve",{ph:"Pl. Kovács",attrs:'autocomplete="family-name"'})}
+  ${textField(p+".first","Keresztneve",{ph:"Pl. Anna",attrs:'autocomplete="given-name"'})}
+  <fieldset class="field"><legend class="label">Születési hely és dátum${reqMark}</legend>
+    <div class="row2">
+      ${ctrlInput(p+".birthPlace",{ph:"Születési hely",attrs:'aria-label="Születési hely"'})}
+      ${ctrlDate(p+".birthDate",{max:todayISO(),aria:"Születési dátum"})}
+    </div>${errMsg(p+".birthPlace")}${errMsg(p+".birthDate")}
+  </fieldset>
+  ${textField(p+".mother","Édesanyja neve",{ph:"Születési név"})}
+  ${textField(p+".phone","Telefonszáma",{prefix:"+36",ph:"20-123-4567",type:"tel",attrs:'autocomplete="tel-national"'})}
+  ${textField(p+".email","E-mail címe",{type:"email",ph:"nev@pelda.hu",attrs:'autocomplete="email"'})}`;
+}
+
+/* ---------- Chrome: stepper, summary ---------- */
+function stepper(){
+  const cur = S.step;
+  const items = STEPS.map((t,i)=>{
+    const skipped = i===4 && ownerSkipped() && cur>=3;
+    const cls = skipped ? "is-skipped" : i<cur ? "is-done" : i===cur ? "is-active" : "";
+    const dot = (i<cur && !skipped) ? ic("check",16,2.6) : (i+1);
+    const inner = `<span class="dot">${dot}</span><span class="step-title">${t}</span>${skipped?'<span class="step-desc">Nem szükséges</span>':""}`;
+    const clickable = i<cur && !skipped && cur<6;
+    return `<li class="step ${cls}"${i===cur?' aria-current="step"':""}>${clickable?`<button type="button" class="step-inner" data-act="goto" data-step="${i}" aria-label="${t} – vissza ehhez a lépéshez">${inner}</button>`:`<div class="step-inner">${inner}</div>`}</li>`;
+  }).join("");
+  const pct = Math.round((cur+1)/STEPS.length*100);
+  return `<ol class="stepper" aria-label="Lépések">${items}</ol>
+  <div class="stepper-compact" aria-hidden="true"><div class="top"><strong>${STEPS[cur]}</strong><span>${cur+1}. lépés / ${STEPS.length}</span></div><div class="bar"><span style="width:${pct}%"></span></div></div>`;
+}
+function summary(){
+  const p = S.pet, plan = PLANS.find(x=>x.id===S.plan);
+  const rows = [
+    ["Faj", p.type ? (p.type==="kutya"?"Kutya":"Macska") : null],
+    ["Fajta", p.pure==="Igen" ? p.breed : p.pure==="Nem" ? "Keverék" : null],
+    ["Microchip", p.chip||null],
+    ["Név", p.name||null],
+    ["Csomag", plan ? plan.name : null],
+    ["Díj", plan ? ft(price(plan.id))+" / hó" : null]
+  ].filter(r=>r[1]);
+  return `<aside class="card summary" aria-label="Részletek">
+    <h3>Részletek</h3>
+    <p>${petSentence()}</p>
+    <hr>
+    <p class="meta">${ic("cal",16,1.8)}Született: ${ym(p.birth)}</p>
+    ${plan?`<p class="meta"><span class="badge teal">${plan.name}</span> ${ft(price(plan.id))} / hó</p>`:""}
+    <div><button type="button" class="link" data-act="more" aria-expanded="${S.ui.more}">${S.ui.more?"Kevesebb adat":"További adatok"}</button></div>
+    ${S.ui.more?`<dl>${rows.map(r=>`<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join("")}</dl>`:""}
+  </aside>`;
+}
+const backBtn = () => `<button type="button" class="btn btn-tertiary btn-sm" data-act="back">${ic("chevL",18,2.4)}Vissza</button>`;
+function errorAlert(){
+  const n = Object.keys(S.errors).length; if(!n) return "";
+  return `<div class="alert alert-error" role="alert">${ic("alert",28)}<div><div class="a-title">Néhány adat hiányzik vagy hibás</div><div class="a-text">Kérjük, javítsa a pirossal jelölt ${n===1?"mezőt":n+" mezőt"}, majd kattintson újra a gombra.</div></div></div>`;
+}
+
+/* ---------- Views ---------- */
+function vPet(){
+  const p = S.pet;
+  return `${stepper()}
+  <div class="layout">
+    <div class="col">
+      ${errorAlert()}
+      <section class="card form" aria-labelledby="t-pet">
+        <h2 class="card-title" id="t-pet">Kisállatom adatai</h2>
+        ${radioGroup("pet.type","Az én kisállatom egy",[["kutya","Kutya",DOG],["macska","Macska",CAT]],{stack:true})}
+        ${radioGroup("pet.chip","Kedvencének van microchipje?",["Igen","Nem"])}
+        ${dateField("pet.birth","A kisállat születési ideje",{max:todayISO(),min:"1996-01-01"})}
+        ${radioGroup("pet.sex","Neme",["Hím","Nőstény"])}
+        ${radioGroup("pet.pure","Fajtatiszta?",[["Igen","Igen"],["Nem","Nem, keverék"]])}
+        ${p.pure==="Igen" ? selectField("pet.breed","Fajtája",BREEDS[p.type]||[],{ph: p.type ? "Kérjük, válasszon!" : "Előbb válassza ki a kisállat faját"}) : ""}
+      </section>
+      <div class="actions"><button type="button" class="btn btn-primary btn-lg" data-act="next">Tovább</button></div>
+    </div>
+    <div class="art" aria-hidden="false">${ART}</div>
+  </div>`;
+}
+
+function vPlan(){
+  const cards = PLANS.map(pl=>{
+    const chosen = S.plan===pl.id;
+    return `<article class="plan${chosen?" is-chosen":""}" data-tier="${pl.id}" aria-labelledby="pl-${pl.id}">
+      <div class="plan-head"><span id="pl-${pl.id}">${pl.name}</span>${pl.badge?`<span class="badge">${pl.badge}</span>`:""}</div>
+      <div class="plan-body">
+        <p class="price">${ft(price(pl.id))}<small>havonta</small></p>
+        <button type="button" class="btn btn-primary" data-act="plan" data-plan="${pl.id}" aria-label="${pl.name} csomag megkötése">${chosen?ic("check",18,2.4)+"Kiválasztva – tovább":"Megkötöm"}</button>
+        <ul class="cov">${pl.cov.map(([t,v])=> v
+          ? `<li>${ic("check",24,2)}<div><strong>${t}</strong><span>${v}</span></div></li>`
+          : `<li class="no">${ic("x",24,1.6)}<div><strong>${t}</strong><span class="sr-only">nem tartalmazza</span></div></li>`).join("")}</ul>
+      </div>
+    </article>`;
+  }).join("");
+  return `${stepper()}
+  <section class="page-title" aria-labelledby="t-plan">
+    <h1 id="t-plan">Válasszon kisállat-biztosításaink közül</h1>
+    <div class="meta-row">
+      <span>${petSentence()}</span>
+      <span class="meta">${ic("cal",16,1.8)}Született: ${ym(S.pet.birth)}</span>
+      <button type="button" class="link" data-act="goto" data-step="0">${ic("pencil",16,1.8)}Módosítom</button>
+    </div>
+  </section>
+  <div class="toprow">${backBtn()}</div>
+  <div class="plans">${cards}</div>
+  <p class="fineprint">A prototípusban a díjak szemléltető jellegűek: a kisállat faja, kora és fajtatisztasága alapján számolódnak.</p>
+  <section class="card docs-card" aria-labelledby="t-docs">
+    <h2 class="card-title" id="t-docs" style="font-size:20px">Dokumentumok</h2>
+    <ul class="docs" style="margin-top:16px">${DOCS.slice(1).map(d=>`<li><button type="button" class="doc" data-act="doc">${PDF}<span class="name">${d}</span>${ic("download",24,1.8)}</button></li>`).join("")}</ul>
+  </section>`;
+}
+
+function vPetDetails(){
+  const p = S.pet;
+  const nm = p.name ? esc(p.name) : "a kisállat";
+  return `${stepper()}
+  <div class="toprow">${backBtn()}</div>
+  <div class="layout">
+    <div class="col">
+      ${errorAlert()}
+      <section class="card form" aria-labelledby="t-pd">
+        <h2 class="card-title" id="t-pd">Kisállat adatai</h2>
+        ${textField("pet.name","Kisállat neve",{ph:"Pl. Cuki"})}
+        ${textField("pet.mark","Különös jellemzője (ismertetőjegye)",{ph:"Pl. fehér folt a mellkasán",optional:true})}
+        ${textField("pet.vaccNo","Legutolsó előírt védőoltás száma",{ph:"Az oltási könyvből"})}
+        ${dateField("pet.vaccDate","Legutolsó előírt védőoltás dátuma",{max:todayISO()})}
+        ${p.chip==="Igen" ? textField("pet.chipId","A mikrochip azonosítója",{ph:"15 számjegy",attrs:'inputmode="numeric" maxlength="15"'}) + dateField("pet.chipDate","A mikrochip beültetésének dátuma",{max:todayISO()}) : ""}
+        ${radioGroup("pet.ownerIsContractor","A szerződő egyben a kisállat gazdája?",["Igen","Nem"])}
+        ${radioGroup("pet.sameAddr",`A gazdi állandó lakcíme megegyezik <span data-petname>${nm}</span> tartózkodási helyével?`,["Igen","Nem"])}
+      </section>
+      ${p.sameAddr==="Nem" ? `<section class="card form" aria-labelledby="t-pa"><h2 class="card-title" id="t-pa">Kisállat tartózkodási helye</h2>${addressBlock("pet.addr")}</section>` : ""}
+      <div class="actions"><button type="button" class="btn btn-primary btn-lg" data-act="next">Tovább</button></div>
+    </div>
+    ${summary()}
+  </div>`;
+}
+
+function vPerson(kind){
+  const isC = kind==="contractor", base = kind;
+  const m = get(base+".mailSame");
+  return `${stepper()}
+  <div class="toprow">${backBtn()}</div>
+  <div class="layout">
+    <div class="col">
+      ${errorAlert()}
+      ${isC && ownerSkipped() ? `<div class="alert alert-info">${ic("info",28)}<div><div class="a-title">Ön a szerződő és a gazdi is</div><div class="a-text">A gazdi adatait nem kell külön megadnia, ezeket az adatokat használjuk.</div></div></div>` : ""}
+      <section class="card form" aria-labelledby="t-${kind}">
+        <h2 class="card-title" id="t-${kind}">${isC?"Szerződő adatai":"Gazdi adatai"}</h2>
+        ${personBlock(base)}
+      </section>
+      <section class="card form" aria-labelledby="t-${kind}-a">
+        <h2 class="card-title" id="t-${kind}-a">${isC?"Szerződő címe":"Állandó címe"}</h2>
+        ${addressBlock(base+".addr")}
+        ${radioGroup(base+".mailSame","A cím egyezik a levelezési címmel",["Igen","Nem"])}
+      </section>
+      ${m==="Nem" ? `<section class="card form" aria-labelledby="t-${kind}-m"><h2 class="card-title" id="t-${kind}-m">${isC?"Szerződő":"Gazdi"} levelezési címe</h2>${addressBlock(base+".mail")}</section>` : ""}
+      <div class="actions"><button type="button" class="btn btn-primary btn-lg" data-act="next">Tovább</button></div>
+    </div>
+    ${summary()}
+  </div>`;
+}
+
+function vDecl(){
+  const all = S.decl.every(Boolean), some = S.decl.some(Boolean);
+  const err = !!S.errors.decl;
+  return `${stepper()}
+  <div class="toprow">${backBtn()}</div>
+  <div class="layout">
+    <div class="col">
+      ${err?`<div class="alert alert-error" role="alert">${ic("alert",28)}<div><div class="a-title">A szerződéskötéshez minden nyilatkozat szükséges</div><div class="a-text">Kérjük, fogadja el a pirossal jelölt nyilatkozatokat.</div></div></div>`:""}
+      <section class="card form" aria-labelledby="t-decl">
+        <h2 class="card-title" id="t-decl">Nyilatkozatok</h2>
+        <p class="lead">Az általam megadott adatok a valóságnak megfelelnek, és a szerződés online megkötéséhez az alábbi nyilatkozatokat megteszem.</p>
+        <label class="check plain${all?" is-on":some?" is-mixed":""}">
+          <input type="checkbox" id="decl-all" data-act="decl-all"${all?" checked":""}>
+          <span class="box" aria-hidden="true">${all?ic("check",18,2.6):some?ic("minus",18,2.6):""}</span><span class="t"><strong>Összes elfogadása</strong></span>
+        </label>
+        <div class="checks" role="group" aria-label="Nyilatkozatok">
+          ${DECLS.map((d,i)=>{const on=S.decl[i];return `<label class="check${on?" is-on":""}${err&&!on?" is-error":""}">
+            <input type="checkbox" id="decl-${i}" data-decl="${i}"${on?" checked":""}>
+            <span class="box" aria-hidden="true">${on?ic("check",18,2.6):""}</span><span class="t">${d}</span></label>`;}).join("")}
+        </div>
+      </section>
+      <div class="actions"><button type="button" class="btn btn-primary btn-lg" data-act="next">Véglegesítés</button></div>
+    </div>
+    ${summary()}
+  </div>`;
+}
+
+function vSuccess(){
+  const d = S.done || {tx:"WDW00000001744",offer:"623229102"};
+  const plan = PLANS.find(x=>x.id===S.plan);
+  const r = S.ui.rating;
+  return `<div class="success">
+    <section class="hero" aria-labelledby="t-ok">
+      <div class="tick">${ic("check",56,2.4)}</div>
+      <div><h1 id="t-ok" tabindex="-1">Gratulálunk!</h1><p>Ön egy remek kisállat-biztosítást kötött!</p></div>
+    </section>
+    <section class="receipt" aria-label="Tranzakció">
+      <h2>Díjfizetése sikeres volt!</h2>
+      <p class="meta">${ic("swap",20,1.8)}Tranzakció azonosító:&nbsp;<span class="mono">${d.tx}</span></p>
+      <p>Kiállítottuk kisállat-biztosításának ajánlatát, amelynek száma: <span class="mono">${d.offer}</span>.${plan?` Választott csomag: <strong>${plan.name}</strong>, ${ft(price(plan.id))} / hó.`:""} Kérjük, töltse le ajánlatát az alábbi linkre kattintva!</p>
+      <p style="margin-top:12px"><strong>A lenti dokumentumokat eléri az Önnek küldött e-mailben található linkek segítségével is.</strong></p>
+      <ul class="docs">${DOCS.map(x=>`<li><button type="button" class="doc" data-act="doc">${PDF}<span class="name">${x}</span>${ic("download",24,1.8)}</button></li>`).join("")}</ul>
+    </section>
+    <section class="survey" aria-labelledby="t-sv">
+      <div>
+        <h2 id="t-sv">${ic("clip",36,1.8)}Szánjon 1 percet még ránk</h2>
+        <p>${r ? "Köszönjük a visszajelzését!" : "Mondja el, hogy miért minket választott!"}</p>
+      </div>
+      ${S.ui.survey && !r ? `<div><div class="hint" style="margin-bottom:8px">Mennyire elégedett az online szerződéskötéssel? (1–5)</div><div class="rating">${[1,2,3,4,5].map(n=>`<button type="button" data-act="rate" data-n="${n}" aria-pressed="false">${n}</button>`).join("")}</div></div>`
+        : r ? `<span class="badge teal">Értékelés: ${r} / 5</span>` : `<button type="button" class="btn btn-primary btn-lg" data-act="survey">Kitöltöm</button>`}
+    </section>
+    <div class="actions" style="justify-content:flex-start"><button type="button" class="btn btn-secondary" data-act="restart">Új kalkuláció indítása</button></div>
+  </div>`;
+}
+
+const VIEWS = [vPet, vPlan, vPetDetails, ()=>vPerson("contractor"), ()=>vPerson("owner"), vDecl, vSuccess];
+
+/* ---------- Validation ---------- */
+const RE_MAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function need(errs,p,msg){ const v=get(p); if(v==null || String(v).trim()==="") errs[p]=msg||"Kérjük, töltse ki ezt a mezőt."; }
+function needChoice(errs,p){ if(!get(p)) errs[p]="Kérjük, válasszon a lehetőségek közül."; }
+function needAddr(errs,p){
+  const z=get(p+".zip");
+  if(!z) errs[p+".zip"]="Kérjük, adja meg az irányítószámot."; else if(!/^\d{4}$/.test(z)) errs[p+".zip"]="Az irányítószám 4 számjegyből áll.";
+  need(errs,p+".city","Kérjük, válassza ki a települést.");
+  need(errs,p+".street","Kérjük, válassza ki a közterületet.");
+  need(errs,p+".no","Kérjük, adja meg a házszámot.");
+  need(errs,p+".building","Kérjük, válassza ki az épület jellegét.");
+}
+function needDate(errs,p,{past=true}={}){
+  const v=get(p); if(!v){ errs[p]="Kérjük, adja meg a dátumot."; return; }
+  if(past && v>todayISO()) errs[p]="A dátum nem lehet a jövőben.";
+}
+function needPerson(errs,b,adult){
+  need(errs,b+".last"); need(errs,b+".first"); need(errs,b+".birthPlace","Kérjük, adja meg a születési helyet.");
+  needDate(errs,b+".birthDate"); if(adult && get(b+".birthDate") && !errs[b+".birthDate"] && ageYears(get(b+".birthDate"))<18) errs[b+".birthDate"]="A szerződő csak nagykorú személy lehet.";
+  need(errs,b+".mother");
+  const ph=(get(b+".phone")||"").replace(/[\s-]/g,"");
+  if(!ph) errs[b+".phone"]="Kérjük, adja meg a telefonszámát."; else if(!/^\d{8,9}$/.test(ph)) errs[b+".phone"]="Adja meg a számot körzetszámmal, pl. 20-123-4567.";
+  const em=get(b+".email")||"";
+  if(!em) errs[b+".email"]="Kérjük, adja meg az e-mail címét."; else if(!RE_MAIL.test(em)) errs[b+".email"]="Az e-mail cím formátuma: nev@pelda.hu";
+  needAddr(errs,b+".addr"); needChoice(errs,b+".mailSame"); if(get(b+".mailSame")==="Nem") needAddr(errs,b+".mail");
+}
+function validate(step){
+  const e={}, p=S.pet;
+  if(step===0){
+    needChoice(e,"pet.type"); needChoice(e,"pet.chip"); needDate(e,"pet.birth"); needChoice(e,"pet.sex"); needChoice(e,"pet.pure");
+    if(p.pure==="Igen") need(e,"pet.breed","Kérjük, válassza ki a fajtát.");
+  } else if(step===2){
+    need(e,"pet.name"); need(e,"pet.vaccNo"); needDate(e,"pet.vaccDate");
+    if(p.chip==="Igen"){ const c=p.chipId||""; if(!c) e["pet.chipId"]="Kérjük, adja meg a chip azonosítóját."; else if(!/^\d{15}$/.test(c)) e["pet.chipId"]="A chip azonosítója 15 számjegyből áll."; needDate(e,"pet.chipDate"); }
+    needChoice(e,"pet.ownerIsContractor"); needChoice(e,"pet.sameAddr"); if(p.sameAddr==="Nem") needAddr(e,"pet.addr");
+  } else if(step===3){ needPerson(e,"contractor",true);
+  } else if(step===4){ needPerson(e,"owner",false);
+  } else if(step===5){ if(!S.decl.every(Boolean)) e.decl="all"; }
+  return e;
+}
+
+/* ---------- Sample data ---------- */
+const sampleAddr = () => ({zip:"1136",city:"Budapest",street:"Visegrádi utca",no:"9",building:"Családi ház, ikerház"});
+function sample(step){
+  if(step===0) Object.assign(S.pet,{type:"kutya",chip:"Igen",birth:"2020-06-14",sex:"Hím",pure:"Nem",breed:""});
+  if(step===1) S.plan = S.plan || "opti";
+  if(step===2) Object.assign(S.pet,{name:"Cuki",mark:"Fehér folt a mellkasán",vaccNo:"VK-2025-118734",vaccDate:"2025-09-03",chipId:"900108000123456",chipDate:"2020-09-01",ownerIsContractor:"Nem",sameAddr:"Igen"});
+  if(step===3) Object.assign(S.contractor,{last:"Teszt",first:"Elek",birthPlace:"Tatabánya",birthDate:"1970-05-05",mother:"Teszt Mama",phone:"20-222-5555",email:"teszt.elek@pelda.hu",addr:sampleAddr(),mailSame:"Igen"});
+  if(step===4) Object.assign(S.owner,{last:"Teszt",first:"Anna",birthPlace:"Budapest",birthDate:"1998-11-20",mother:"Minta Mária",phone:"30-111-2233",email:"teszt.anna@pelda.hu",addr:sampleAddr(),mailSame:"Igen"});
+  if(step===5) S.decl=[true,true,true,true];
+  S.errors={}; save();
+}
+
+/* ---------- Render ---------- */
+function render(opts={}){
+  const aid = document.activeElement && document.activeElement.id;
+  view.innerHTML = VIEWS[S.step]();
+  syncJump();
+  const mixed = document.getElementById("decl-all");
+  if(mixed) mixed.indeterminate = !S.decl.every(Boolean) && S.decl.some(Boolean);
+  if(opts.top){ window.scrollTo({top:0,behavior:"auto"}); const h=view.querySelector("h1,h2"); if(h){ h.setAttribute("tabindex","-1"); h.focus({preventScroll:true}); } }
+  else if(aid){ const el=document.getElementById(aid); if(el) el.focus({preventScroll:true}); }
+}
+function go(step){ S.step=step; S.errors={}; save(); render({top:true}); }
+function focusFirstError(){
+  const k = Object.keys(S.errors)[0]; if(!k) return;
+  let el = k==="decl" ? view.querySelector(".check.is-error input") : document.getElementById(idOf(k));
+  if(el && el.tagName==="FIELDSET") el = el.querySelector("input");
+  if(el){ el.closest(".field, .check")?.scrollIntoView({block:"center"}); el.focus({preventScroll:true}); }
+}
+function next(){
+  const e = validate(S.step);
+  if(Object.keys(e).length){ S.errors=e; save(); render(); focusFirstError(); return; }
+  if(S.step===5){
+    const rnd = n => Array.from({length:n},()=>Math.floor(Math.random()*10)).join("");
+    S.done = {tx:"WDW"+rnd(11), offer:"6"+rnd(8)};
+  }
+  go(nextStep(S.step));
+}
+
+/* proto screen jump */
+const jump = $("#proto-jump");
+jump.innerHTML = STEPS.map((t,i)=>`<option value="${i}">${i+1}. ${t}</option>`).join("");
+function syncJump(){ jump.value = String(S.step); }
+jump.addEventListener("change", ()=>{ const i=+jump.value; if(i===4 && ownerSkipped()) S.pet.ownerIsContractor="Nem"; go(i); });
+
+/* toast */
+let tt; function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove("show"),2600); }
+
+function clearErr(p){
+  if(!S.errors[p]) return;
+  delete S.errors[p]; save();
+  const el = document.getElementById(idOf(p));
+  const ctrl = el && el.closest(".control"); if(ctrl) ctrl.classList.remove("is-error");
+  if(el){ el.removeAttribute("aria-invalid"); el.removeAttribute("aria-describedby"); }
+  const m = document.getElementById(idOf(p)+"-err"); if(m) m.remove();
+}
+function refreshStreet(p){
+  const box = view.querySelector(`[data-street="${p}"]`); if(box) box.innerHTML = streetField(p);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("input", e=>{
+  const el = e.target, p = el.dataset && el.dataset.path; if(!p || el.type==="radio") return;
+  let v = el.value;
+  if(p.endsWith(".zip")){ v=v.replace(/\D/g,"").slice(0,4); el.value=v; }
+  if(p==="pet.chipId"){ v=v.replace(/\D/g,"").slice(0,15); el.value=v; }
+  set(p,v); clearErr(p);
+  if(p.endsWith(".zip") && ZIPS[v]){
+    const base = p.slice(0,-4), city = ZIPS[v];
+    if(get(base+".city")!==city){ set(base+".city",city); set(base+".street",""); clearErr(base+".city");
+      const sel=document.getElementById(idOf(base+".city")); if(sel){ sel.value=city; sel.classList.remove("is-empty"); }
+      refreshStreet(base); }
+  }
+  if(p==="pet.name"){ view.querySelectorAll("[data-petname]").forEach(s=>s.textContent = v.trim() || "a kisállat"); }
+});
+document.addEventListener("change", e=>{
+  const el = e.target;
+  if(el.dataset && el.dataset.decl!=null){ S.decl[+el.dataset.decl]=el.checked; if(S.errors.decl && S.decl.every(Boolean)) delete S.errors.decl; save(); render(); return; }
+  if(el.id==="decl-all"){ const all=!S.decl.every(Boolean); S.decl=S.decl.map(()=>all); if(all) delete S.errors.decl; save(); render(); return; }
+  const p = el.dataset && el.dataset.path; if(!p) return;
+  if(el.tagName==="SELECT"){
+    set(p,el.value); el.classList.toggle("is-empty",!el.value); clearErr(p);
+    if(p.endsWith(".city")){ set(p.slice(0,-5)+".street",""); refreshStreet(p.slice(0,-5)); }
+    if(p==="pet.breed" || p.endsWith(".building")) return;
+    return;
+  }
+  if(el.type==="radio"){
+    set(p,el.value); delete S.errors[p];
+    if(p==="pet.type"){ S.pet.breed=""; }
+    save(); render();
+  }
+});
+document.addEventListener("click", e=>{
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const a = b.dataset.act;
+  if(b.tagName==="A") e.preventDefault();
+  switch(a){
+    case "next": next(); break;
+    case "back": go(prevStep(S.step)); break;
+    case "goto": go(+b.dataset.step); break;
+    case "plan": S.plan=b.dataset.plan; save(); go(2); break;
+    case "more": S.ui.more=!S.ui.more; save(); render(); break;
+    case "picker": { const inp=document.getElementById(b.dataset.for); if(inp){ inp.focus(); try{ inp.showPicker(); }catch(err){} } break; }
+    case "doc": toast("A prototípusban a dokumentumok nem tölthetők le."); break;
+    case "stub": toast("Ez a hivatkozás a prototípusban nem működik."); break;
+    case "survey": S.ui.survey=true; save(); render(); break;
+    case "rate": S.ui.rating=+b.dataset.n; save(); render(); toast("Köszönjük a visszajelzését!"); break;
+    case "sample": sample(S.step); render(); toast("Mintaadatok kitöltve ezen a képernyőn."); break;
+    case "home": if(S.step<6) go(0); break;
+    case "restart": S=fresh(); save(); render({top:true}); toast("Új kalkuláció indult."); break;
+  }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
